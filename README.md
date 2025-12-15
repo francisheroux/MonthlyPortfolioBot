@@ -2,9 +2,9 @@
 
 A serverless application that automatically sends you a monthly email summary of your Robinhood portfolio, including retirement progress tracking.
 
-<img width="756" height="998" alt="image" src="https://github.com/user-attachments/assets/138e7157-c088-42e0-a290-0ef90b0f45ad" />
+<img width="356" height="598" alt="image" src="https://github.com/user-attachments/assets/138e7157-c088-42e0-a290-0ef90b0f45ad" />
 
-<img width="736" height="784" alt="image" src="https://github.com/user-attachments/assets/d1083ba0-65ba-401a-80d9-1fa1b22c51fc" />
+<img width="336" height="584" alt="image" src="https://github.com/user-attachments/assets/d1083ba0-65ba-401a-80d9-1fa1b22c51fc" />
 
 
 
