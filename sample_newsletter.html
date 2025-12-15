@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Portfolio Summary</title>
+    <style>
+        /* Reset and base styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #00C805 0%, #00A804 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0 0 5px 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .header .date {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        /* Sections */
+        .section {
+            padding: 25px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section h2 {
+            margin: 0 0 20px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Metrics grid */
+        .metrics {
+            display: table;
+            width: 100%;
+        }
+
+        .metric {
+            display: table-cell;
+            text-align: center;
+            padding: 10px;
+            width: 33.33%;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Color classes */
+        .positive { color: #00C805; }
+        .negative { color: #FF5000; }
+        .neutral { color: #333; }
+
+        /* Holdings table */
+        .holding-row {
+            display: table;
+            width: 100%;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .holding-row:last-child {
+            border-bottom: none;
+        }
+
+        .holding-left {
+            display: table-cell;
+            vertical-align: middle;
+            width: 60%;
+        }
+
+        .holding-right {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            width: 40%;
+        }
+
+        .holding-symbol {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .holding-name {
+            font-size: 13px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+
+        .holding-value {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .holding-change {
+            font-size: 13px;
+        }
+
+        /* Progress bar */
+        .progress-container {
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            background: #e9ecef;
+            height: 24px;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #00C805 0%, #00E006 100%);
+            height: 100%;
+            border-radius: 12px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .progress-text strong {
+            color: #333;
+        }
+
+        /* Status badge */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .status-on-track {
+            background: #e6f9e6;
+            color: #00A804;
+        }
+
+        .status-behind {
+            background: #fff3e6;
+            color: #FF5000;
+        }
+
+        /* Info box */
+        .info-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .info-box p {
+            margin: 5px 0;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            background: #f8f9fa;
+        }
+
+        /* Responsive adjustments for email clients */
+        @media only screen and (max-width: 480px) {
+            .metric-value {
+                font-size: 20px;
+            }
+            .metric-label {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Monthly Portfolio Summary</h1>
+            <div class="date">December 2025</div>
+        </div>
+
+        <!-- Individual Account Section -->
+        <div class="section">
+            <h2>Individual Account</h2>
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-value neutral">$48,251</div>
+                    <div class="metric-label">Total Value</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value positive">
+                        +4.2%
+                    </div>
+                    <div class="metric-label">This Month</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value positive">
+                        +14.8%
+                    </div>
+                    <div class="metric-label">Year to Date</div>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <p><strong>Cash Balance:</strong> $582.35</p>
+            </div>
+            
+        </div>
+
+        <!-- Top Holdings Section (Individual Account) -->
+        <div class="section">
+            <h2>Holdings (Individual)</h2>
+            
+            <div class="holding-row">
+                <div class="holding-left">
+                    <div class="holding-symbol">VOO</div>
+                    <div class="holding-name">Vanguard S&amp;P 500 ETF</div>
+                </div>
+                <div class="holding-right">
+                    <div class="holding-value">$15,420.50</div>
+                    <div class="holding-change positive">
+                        +12.34%
+                    </div>
+                </div>
+            </div>
+            
+            <div class="holding-row">
+                <div class="holding-left">
+                    <div class="holding-symbol">AAPL</div>
+                    <div class="holding-name">Apple Inc.</div>
+                </div>
+                <div class="holding-right">
+                    <div class="holding-value">$8,750.25</div>
+                    <div class="holding-change positive">
+                        +18.92%
+                    </div>
+                </div>
+            </div>
+            
+            <div class="holding-row">
+                <div class="holding-left">
+                    <div class="holding-symbol">MSFT</div>
+                    <div class="holding-name">Microsoft Corporation</div>
+                </div>
+                <div class="holding-right">
+                    <div class="holding-value">$6,230.80</div>
+                    <div class="holding-change positive">
+                        +15.67%
+                    </div>
+                </div>
+            </div>
+            
+            <div class="holding-row">
+                <div class="holding-left">
+                    <div class="holding-symbol">GOOGL</div>
+                    <div class="holding-name">Alphabet Inc.</div>
+                </div>
+                <div class="holding-right">
+                    <div class="holding-value">$4,125.00</div>
+                    <div class="holding-change positive">
+                        +8.45%
+                    </div>
+                </div>
+            </div>
+            
+            <div class="holding-row">
+                <div class="holding-left">
+                    <div class="holding-symbol">AMZN</div>
+                    <div class="holding-name">Amazon.com Inc.</div>
+                </div>
+                <div class="holding-right">
+                    <div class="holding-value">$3,890.75</div>
+                    <div class="holding-change negative">
+                        -2.15%
+                    </div>
+                </div>
+            </div>
+            
+            <div class="holding-row">
+                <div class="holding-left">
+                    <div class="holding-symbol">NVDA</div>
+                    <div class="holding-name">NVIDIA Corporation</div>
+                </div>
+                <div class="holding-right">
+                    <div class="holding-value">$3,250.60</div>
+                    <div class="holding-change positive">
+                        +45.23%
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Roth IRA Account Section -->
+        
+        <div class="section">
+            <h2>Roth IRA Account</h2>
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-value neutral">$21,500</div>
+                    <div class="metric-label">Total Value</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value positive">
+                        +3.2%
+                    </div>
+                    <div class="metric-label">This Month</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value positive">
+                        +9.8%
+                    </div>
+                    <div class="metric-label">Year to Date</div>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <p><strong>Cash Balance:</strong> $125.50</p>
+            </div>
+            
+        </div>
+
+        <!-- Top Holdings Section (IRA Account) -->
+        
+        <div class="section">
+            <h2>Holdings (Roth IRA)</h2>
+            
+            <div class="holding-row">
+                <div class="holding-left">
+                    <div class="holding-symbol">VTI</div>
+                    <div class="holding-name">Vanguard Total Stock Market ETF</div>
+                </div>
+                <div class="holding-right">
+                    <div class="holding-value">$12,500.00</div>
+                    <div class="holding-change positive">
+                        +11.25%
+                    </div>
+                </div>
+            </div>
+            
+            <div class="holding-row">
+                <div class="holding-left">
+                    <div class="holding-symbol">VXUS</div>
+                    <div class="holding-name">Vanguard Total International Stock ETF</div>
+                </div>
+                <div class="holding-right">
+                    <div class="holding-value">$5,200.00</div>
+                    <div class="holding-change positive">
+                        +6.80%
+                    </div>
+                </div>
+            </div>
+            
+            <div class="holding-row">
+                <div class="holding-left">
+                    <div class="holding-symbol">BND</div>
+                    <div class="holding-name">Vanguard Total Bond Market ETF</div>
+                </div>
+                <div class="holding-right">
+                    <div class="holding-value">$3,800.00</div>
+                    <div class="holding-change positive">
+                        +2.15%
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        
+
+        <!-- Dividends Section -->
+        <div class="section">
+            <h2>Dividends</h2>
+            <div class="metrics">
+                <div class="metric" style="width: 50%;">
+                    <div class="metric-value positive">$127.45</div>
+                    <div class="metric-label">This Month</div>
+                </div>
+                <div class="metric" style="width: 50%;">
+                    <div class="metric-value positive">$1,542.80</div>
+                    <div class="metric-label">Year to Date</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Retirement Progress Section -->
+        <div class="section">
+            <h2>Retirement Progress</h2>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 8.5%;"></div>
+                </div>
+                <div class="progress-text">
+                    <strong>8.5%</strong> of
+                    $2,000,000 goal
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <span class="status-badge status-on-track">
+                    On Track
+                </span>
+            </div>
+
+            <div class="info-box">
+                <p><strong>Combined Portfolio Value:</strong> $69,751 (Individual + Roth IRA)</p>
+                <p><strong>Years Remaining:</strong> 30 years</p>
+                <p><strong>Projected at Retirement:</strong> $2,450,000</p>
+                
+                <p><strong>Projected Surplus:</strong> $450,000</p>
+                
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Generated automatically by Monthly Portfolio Bot</p>
+            <p>Data from Robinhood as of December 2025</p>
+        </div>
+    </div>
+</body>
+</html>

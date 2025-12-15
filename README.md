@@ -28,9 +28,6 @@ EventBridge (monthly) --> Lambda --> S3 (cached session)
                         AWS SES (email)
 ```
 
-**Note:** Robinhood removed TOTP authentication in Dec 2024. This bot uses session caching -
-you login locally once (with device approval), and the session is cached to S3 for Lambda to reuse.
-
 ## Prerequisites
 
 1. **Robinhood Account** with device approval enabled
@@ -52,22 +49,21 @@ cd C:\Users\Francis\PycharmProjects\MonthlyPortfolioBot
 pip install -r requirements-dev.txt
 ```
 
-### 2. Configure Robinhood TOTP (for automated deployment)
+### 2. Authenticate and Cache Session
 
-To automate the monthly newsletter, you need the TOTP secret key from Robinhood:
+Robinhood removed TOTP authentication in Dec 2024. This bot uses **session caching** - you log in once locally (with device approval via SMS/email), and the session is cached to S3 for Lambda to reuse.
 
-1. Open **Robinhood App** > Account > Settings > Security > Two-Factor Authentication
-2. If using SMS, disable it first, then re-enable with **"Authenticator App"**
-3. When shown the QR code, look for **"Can't scan?"** or **"Setup key"** link
-4. **Copy the secret key** shown (looks like `JBSWY3DPEHPK3PXP`)
-5. Also add it to Google Authenticator/Authy so you can still log in manually
-
-**Can't find the manual key?** Use a QR scanner app to decode the QR code - it contains:
-```
-otpauth://totp/Robinhood:email?secret=YOUR_SECRET_HERE&issuer=Robinhood
+```powershell
+# Run local test to authenticate and cache session
+python scripts/local_test.py --dry-run
 ```
 
-**For local testing only:** You can skip the TOTP secret and enter MFA codes manually when prompted.
+1. Enter your Robinhood credentials when prompted
+2. Robinhood will send an SMS/email code for device approval
+3. Enter the code - your session will be cached to S3
+4. Lambda can now reuse this cached session
+
+**Note:** Sessions may expire periodically. If Lambda fails with auth errors, re-run the local test to refresh the cached session.
 
 ### 3. Local Testing
 
@@ -152,7 +148,6 @@ Create a file `secrets.json` in the project folder (DO NOT commit this!):
 {
     "robinhood_username": "your_email@example.com",
     "robinhood_password": "your_password",
-    "robinhood_totp_secret": "",
     "sender_email": "your-email@example.com",
     "recipient_email": "your-email@example.com",
     "retirement_target": "2000000",
@@ -215,7 +210,6 @@ aws logs tail /aws/lambda/monthly-portfolio-newsletter --since 1h
 |-----|-------------|
 | `robinhood_username` | Robinhood account email |
 | `robinhood_password` | Robinhood account password |
-| `robinhood_totp_secret` | Base32 TOTP secret for MFA |
 | `sender_email` | SES verified sender email |
 | `recipient_email` | Your email to receive newsletters |
 | `retirement_target` | Target retirement amount (e.g., 2000000) |
@@ -265,9 +259,9 @@ MonthlyPortfolioBot/
 
 ### Login Failed
 
-- Verify your TOTP secret is correct (base32 format)
+- Re-run `python scripts/local_test.py --dry-run` to refresh the cached session
 - Check your Robinhood password hasn't changed
-- Ensure 2FA is enabled with "Other" authenticator
+- Verify the S3 bucket for session caching exists and is accessible
 
 ### Email Not Sending
 
@@ -284,7 +278,7 @@ MonthlyPortfolioBot/
 
 - Never commit `.env` or `secrets.json` files
 - Credentials are stored in AWS Secrets Manager (encrypted at rest)
-- Lambda uses `store_session=False` to avoid persisting auth tokens
+- Session cache is stored in a private S3 bucket with encryption
 - IAM role follows least-privilege principle
 
 ## Cost
@@ -293,6 +287,7 @@ All AWS services used are free tier eligible:
 - Lambda: 1M free requests/month
 - Secrets Manager: First 30 days free, then ~$0.40/month
 - SES: 62,000 emails/month free from Lambda
+- S3: 5GB storage free (session cache is < 1KB)
 - CloudWatch: 5GB logs free
 - EventBridge: Free for scheduled rules
 
