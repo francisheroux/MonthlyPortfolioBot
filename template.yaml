@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Monthly Portfolio Newsletter Bot - Sends monthly Robinhood portfolio summaries via email
+
+Globals:
+  Function:
+    Timeout: 180  # 3 minutes to allow time for device approval
+    Runtime: python3.12
+    MemorySize: 256
+
+Parameters:
+  SecretName:
+    Type: String
+    Default: monthly-portfolio-bot/credentials
+    Description: Name of the Secrets Manager secret containing credentials
+
+  SessionBucketName:
+    Type: String
+    Default: ""
+    Description: S3 bucket name for storing Robinhood session (leave empty to auto-create)
+
+  ScheduleExpression:
+    Type: String
+    Default: cron(0 13 1 * ? *)
+    Description: Schedule for newsletter (default is 1st of month at 8AM EST / 1PM UTC)
+
+  NotificationEmail:
+    Type: String
+    Description: Email address for error notifications (optional)
+    Default: ""
+
+Conditions:
+  HasNotificationEmail: !Not [!Equals [!Ref NotificationEmail, ""]]
+  CreateSessionBucket: !Equals [!Ref SessionBucketName, ""]
+
+Resources:
+  # S3 Bucket for storing Robinhood session pickle
+  SessionBucket:
+    Type: AWS::S3::Bucket
+    Condition: CreateSessionBucket
+    Properties:
+      BucketName: !Sub portfolio-bot-sessions-${AWS::AccountId}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # Lambda Function
+  PortfolioNewsletterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: monthly-portfolio-newsletter
+      Handler: src.lambda_handler.lambda_handler
+      CodeUri: ./
+      Description: Generates and sends monthly portfolio newsletter
+      Environment:
+        Variables:
+          SECRET_NAME: !Ref SecretName
+          SESSION_BUCKET: !If [CreateSessionBucket, !Ref SessionBucket, !Ref SessionBucketName]
+          ALERT_TOPIC_ARN: !If [HasNotificationEmail, !Ref AlertTopic, ""]
+      Policies:
+        # Publish to SNS for alerts
+        - !If
+          - HasNotificationEmail
+          - Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref AlertTopic
+          - !Ref AWS::NoValue
+        # Read secrets from Secrets Manager
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${SecretName}*
+        # Send emails via SES
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource: '*'
+        # Read/Write session to S3
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+              Resource: !If
+                - CreateSessionBucket
+                - !Sub arn:aws:s3:::${SessionBucket}/*
+                - !Sub arn:aws:s3:::${SessionBucketName}/*
+      Events:
+        MonthlySchedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: !Ref ScheduleExpression
+            ScheduleExpressionTimezone: America/New_York
+            Name: monthly-portfolio-newsletter-schedule
+            Description: Triggers portfolio newsletter on the 1st of each month
+
+  # CloudWatch Log Group with retention
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${PortfolioNewsletterFunction}
+      RetentionInDays: 30
+
+  # SNS Topic for error notifications
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Condition: HasNotificationEmail
+    Properties:
+      TopicName: portfolio-bot-alerts
+      DisplayName: Portfolio Bot Alerts
+
+  # Email subscription for alerts
+  AlertSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasNotificationEmail
+    Properties:
+      Protocol: email
+      TopicArn: !Ref AlertTopic
+      Endpoint: !Ref NotificationEmail
+
+  # CloudWatch Alarm for Lambda errors
+  ErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasNotificationEmail
+    Properties:
+      AlarmName: PortfolioBot-LambdaErrors
+      AlarmDescription: Triggers when the portfolio newsletter Lambda fails
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref PortfolioNewsletterFunction
+      AlarmActions:
+        - !Ref AlertTopic
+      TreatMissingData: notBreaching
+
+Outputs:
+  FunctionArn:
+    Description: ARN of the Lambda function
+    Value: !GetAtt PortfolioNewsletterFunction.Arn
+
+  FunctionName:
+    Description: Name of the Lambda function
+    Value: !Ref PortfolioNewsletterFunction
+
+  LogGroupName:
+    Description: CloudWatch Log Group name
+    Value: !Ref LogGroup
+
+  AlertTopicArn:
+    Description: ARN of the SNS alert topic
+    Condition: HasNotificationEmail
+    Value: !Ref AlertTopic
+
+  SessionBucketName:
+    Description: S3 bucket for session storage
+    Value: !If [CreateSessionBucket, !Ref SessionBucket, !Ref SessionBucketName]

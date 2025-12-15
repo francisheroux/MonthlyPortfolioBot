@@ -1,0 +1,49 @@
+# Environment
+.env
+.venv/
+venv/
+env/
+
+# Secrets (NEVER commit these!)
+secrets.json
+output.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Robin Stocks session files
+*.pickle
+
+# IDE
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+
+# AWS SAM
+.aws-sam/
+samconfig.toml
+
+# Deployment artifacts
+deployment.zip
+package/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

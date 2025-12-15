@@ -1,0 +1,15 @@
+# Include production dependencies
+-r requirements.txt
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# AWS mocking for tests
+moto>=4.2.0
+
+# Local environment variables
+python-dotenv>=1.0.0
+
+# Date mocking for tests
+freezegun>=1.2.0
