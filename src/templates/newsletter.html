@@ -228,6 +228,7 @@
         </div>
 
         <!-- Individual Account Section -->
+        {% if total_value > 0 %}
         <div class="section">
             <h2>Individual Account</h2>
             <div class="metrics">
@@ -273,9 +274,10 @@
             </div>
             {% endfor %}
         </div>
+        {% endif %}
 
         <!-- Roth IRA Account Section -->
-        {% if ira_account %}
+        {% if ira_account and ira_account.total_value > 0 %}
         <div class="section">
             <h2>Roth IRA Account</h2>
             <div class="metrics">
@@ -346,6 +348,46 @@
             </div>
         </div>
 
+        <!-- Crypto Holdings Section -->
+        {% if crypto_report and crypto_report.total_value > 0 %}
+        <div class="section">
+            <h2>Cryptocurrency Holdings</h2>
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-value neutral">${{ "{:,.0f}".format(crypto_report.total_value) }}</div>
+                    <div class="metric-label">Total Value</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value {{ 'positive' if crypto_report.gain_loss_percent >= 0 else 'negative' }}">
+                        {{ "{:+.1f}".format(crypto_report.gain_loss_percent) }}%
+                    </div>
+                    <div class="metric-label">Total Return</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value {{ 'positive' if crypto_report.gain_loss_dollars >= 0 else 'negative' }}">
+                        {{ "+" if crypto_report.gain_loss_dollars >= 0 else "-" }}${{ "{:,.0f}".format(crypto_report.gain_loss_dollars|abs) }}
+                    </div>
+                    <div class="metric-label">Gain/Loss</div>
+                </div>
+            </div>
+
+            {% for holding in crypto_report.holdings %}
+            <div class="holding-row">
+                <div class="holding-left">
+                    <div class="holding-symbol">{{ holding.symbol }}</div>
+                    <div class="holding-name">{{ holding.name }}</div>
+                </div>
+                <div class="holding-right">
+                    <div class="holding-value">${{ "{:,.2f}".format(holding.total_value) }}</div>
+                    <div class="holding-change {{ 'positive' if holding.percent_change >= 0 else 'negative' }}">
+                        {{ "{:+.2f}".format(holding.percent_change) }}%
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <!-- Retirement Progress Section -->
         <div class="section">
             <h2>Retirement Progress</h2>
@@ -366,7 +408,13 @@
             </div>
 
             <div class="info-box">
-                <p><strong>Combined Portfolio Value:</strong> ${{ "{:,.0f}".format(combined_retirement_value) }}{% if ira_account %} (Individual + Roth IRA){% endif %}</p>
+                <p><strong>Combined Portfolio Value:</strong> ${{ "{:,.0f}".format(combined_retirement_value) }}
+                {% if (ira_account and ira_account.total_value > 0) or (crypto_report and crypto_report.total_value > 0) %}
+                (Individual
+                {%- if ira_account and ira_account.total_value > 0 %} + Roth IRA{% endif %}
+                {%- if crypto_report and crypto_report.total_value > 0 %} + Crypto{% endif %})
+                {% endif %}
+                </p>
                 <p><strong>Years Remaining:</strong> {{ retirement.years_remaining }} years</p>
                 <p><strong>Projected at Retirement:</strong> ${{ "{:,.0f}".format(retirement.projected_value) }}</p>
                 {% if not retirement.on_track %}

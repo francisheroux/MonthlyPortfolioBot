@@ -31,6 +31,32 @@ class Holding:
 
 
 @dataclass
+class CryptoHolding:
+    """Represents a single cryptocurrency holding."""
+
+    symbol: str  # e.g., "BTC", "ETH"
+    name: str  # e.g., "Bitcoin"
+    quantity: float
+    current_price: float
+    cost_basis: float
+    total_value: float
+    percent_change: float
+    portfolio_percent: float
+
+
+@dataclass
+class CryptoReport:
+    """Report for cryptocurrency holdings."""
+
+    total_value: float
+    total_cost_basis: float
+    gain_loss_dollars: float
+    gain_loss_percent: float
+    holdings: list[CryptoHolding]
+    total_holdings_count: int
+
+
+@dataclass
 class AccountReport:
     """Report for a single account (Individual or IRA)."""
 
@@ -64,7 +90,8 @@ class PortfolioReport:
     # New fields for multi-account support
     individual_account: Optional[AccountReport] = None
     ira_account: Optional[AccountReport] = None
-    combined_retirement_value: float = 0.0  # Individual + IRA total
+    crypto_report: Optional[CryptoReport] = None
+    combined_retirement_value: float = 0.0  # Individual + IRA + Crypto total
 
 
 class PortfolioAnalyzer:
@@ -119,10 +146,14 @@ class PortfolioAnalyzer:
         monthly_dividends = self._calculate_monthly_dividends(dividends)
         ytd_dividends = self._calculate_ytd_dividends(dividends)
 
-        # Calculate combined values
+        # Analyze crypto holdings
+        crypto_report = self._analyze_crypto()
+        crypto_value = crypto_report.total_value if crypto_report else 0.0
+
+        # Calculate combined values (includes crypto for retirement tracking)
         individual_value = individual_account.total_value if individual_account else 0.0
         ira_value = ira_account.total_value if ira_account else 0.0
-        combined_retirement_value = individual_value + ira_value
+        combined_retirement_value = individual_value + ira_value + crypto_value
 
         # Use individual account as the primary for backwards compatibility
         # or combine if both exist
@@ -168,10 +199,15 @@ class PortfolioAnalyzer:
             total_holdings_count=total_holdings_count,
             individual_account=individual_account,
             ira_account=ira_account,
+            crypto_report=crypto_report,
             combined_retirement_value=round(combined_retirement_value, 2),
         )
 
-        logger.info(f"Portfolio analysis complete. Individual: ${individual_value:,.2f}, IRA: ${ira_value:,.2f}, Combined: ${combined_retirement_value:,.2f}")
+        logger.info(
+            f"Portfolio analysis complete. Individual: ${individual_value:,.2f}, "
+            f"IRA: ${ira_value:,.2f}, Crypto: ${crypto_value:,.2f}, "
+            f"Combined: ${combined_retirement_value:,.2f}"
+        )
         return report
 
     def _analyze_account(self, account_number: str, account_type: str, top_n: int) -> AccountReport:
@@ -216,6 +252,57 @@ class PortfolioAnalyzer:
             ytd_change_dollars=round(ytd_change["dollars"], 2),
             ytd_change_percent=round(ytd_change["percent"], 2),
             top_holdings=top_holdings,
+            total_holdings_count=len(holdings),
+        )
+
+    def _analyze_crypto(self) -> Optional[CryptoReport]:
+        """
+        Analyze cryptocurrency holdings.
+
+        Returns:
+            CryptoReport or None if no crypto holdings
+        """
+        logger.info("Analyzing crypto holdings")
+
+        holdings_data = self.client.get_crypto_holdings()
+
+        if not holdings_data:
+            logger.info("No crypto holdings found")
+            return None
+
+        total_value = sum(h["total_value"] for h in holdings_data)
+
+        if total_value <= 0:
+            logger.info("Crypto holdings have zero value")
+            return None
+
+        # Convert to CryptoHolding objects
+        holdings = [
+            CryptoHolding(
+                symbol=h["symbol"],
+                name=h["name"],
+                quantity=h["quantity"],
+                current_price=h["current_price"],
+                cost_basis=h["cost_basis"],
+                total_value=h["total_value"],
+                percent_change=h["percent_change"],
+                portfolio_percent=(h["total_value"] / total_value * 100) if total_value > 0 else 0,
+            )
+            for h in holdings_data
+        ]
+
+        total_cost_basis = sum(h.cost_basis for h in holdings)
+        gain_loss_dollars = total_value - total_cost_basis
+        gain_loss_percent = (gain_loss_dollars / total_cost_basis * 100) if total_cost_basis > 0 else 0.0
+
+        logger.info(f"Crypto analysis complete. Total: ${total_value:,.2f}, Gain/Loss: {gain_loss_percent:+.2f}%")
+
+        return CryptoReport(
+            total_value=round(total_value, 2),
+            total_cost_basis=round(total_cost_basis, 2),
+            gain_loss_dollars=round(gain_loss_dollars, 2),
+            gain_loss_percent=round(gain_loss_percent, 2),
+            holdings=holdings,
             total_holdings_count=len(holdings),
         )
 

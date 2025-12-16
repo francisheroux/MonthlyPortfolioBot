@@ -116,6 +116,8 @@ class EmailService:
             ytd_dividends=portfolio_report.ytd_dividends,
             # IRA account data
             ira_account=portfolio_report.ira_account,
+            # Crypto data
+            crypto_report=portfolio_report.crypto_report,
             combined_retirement_value=portfolio_report.combined_retirement_value,
             # Retirement data
             retirement=retirement_progress,

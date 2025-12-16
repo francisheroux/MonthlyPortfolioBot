@@ -268,6 +268,69 @@ class RobinhoodClient:
             logger.error(f"Failed to get dividends: {str(e)}")
             raise
 
+    def get_crypto_holdings(self) -> list[dict]:
+        """
+        Get all cryptocurrency holdings with position details.
+
+        Returns:
+            List of crypto holdings with symbol, quantity, value, etc.
+        """
+        self._ensure_logged_in()
+
+        try:
+            # Get all crypto positions using robin_stocks
+            positions = rh.crypto.get_crypto_positions()
+
+            if not positions:
+                logger.info("No crypto positions found")
+                return []
+
+            holdings = []
+            for pos in positions:
+                # Skip positions with zero quantity
+                quantity = float(pos.get("quantity", 0) or 0)
+                if quantity <= 0:
+                    continue
+
+                # Get currency info (symbol, name)
+                currency = pos.get("currency", {})
+                symbol = currency.get("code", "UNKNOWN")
+                name = currency.get("name", symbol)
+
+                # Get current price via crypto quote
+                try:
+                    quote = rh.crypto.get_crypto_quote(symbol)
+                    current_price = float(quote.get("mark_price", 0) or 0)
+                except Exception:
+                    current_price = 0.0
+
+                cost_basis = float(pos.get("cost_basis", 0) or 0)
+                total_value = quantity * current_price
+
+                # Calculate percent change
+                percent_change = 0.0
+                if cost_basis > 0:
+                    percent_change = ((total_value - cost_basis) / cost_basis) * 100
+
+                holdings.append({
+                    "symbol": symbol,
+                    "name": name,
+                    "quantity": quantity,
+                    "current_price": current_price,
+                    "cost_basis": cost_basis,
+                    "total_value": total_value,
+                    "percent_change": percent_change,
+                })
+
+            # Sort by total value (highest first)
+            holdings.sort(key=lambda x: x["total_value"], reverse=True)
+            logger.info(f"Found {len(holdings)} crypto holdings")
+            return holdings
+
+        except Exception as e:
+            logger.error(f"Failed to get crypto holdings: {str(e)}")
+            return []
+
     def get_historical_portfolio_value(self, span: str = "month") -> Optional[dict]:
         """
         Get historical portfolio values for calculating changes.
